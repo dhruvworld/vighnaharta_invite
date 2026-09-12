@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="gu">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#7a1c22" />
+    <title>વિઘ્નહર્તા આમંત્રણ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+Gujarati:wght@600;700&family=Noto+Sans+Gujarati:wght@500;600;700&family=Cormorant+Garamond:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="atmosphere" aria-hidden="true"></div>
+
+    <main class="app">
+      <header class="brand">
+        <p class="brand-mark">॥ શ્રી ગણેશાય નમઃ ॥</p>
+        <h1>વિઘ્નહર્તા</h1>
+        <p class="brand-sub">યુવક મંડળ · વ્યક્તિગત આમંત્રણ</p>
+      </header>
+
+      <section class="preview-wrap" aria-label="Invitation preview">
+        <canvas id="inviteCanvas" width="723" height="1024"></canvas>
+      </section>
+
+      <section class="controls">
+        <label class="field" for="guestName">
+          <span>સ્નેહી શ્રી નામ</span>
+          <input
+            id="guestName"
+            type="text"
+            inputmode="text"
+            autocomplete="name"
+            maxlength="40"
+            placeholder="ગુજરાતી અથવા English નામ લખો"
+            autofocus
+          />
+        </label>
+
+        <div class="actions">
+          <button type="button" class="btn btn-whatsapp" id="shareWhatsApp">
+            WhatsApp પર મોકલો
+          </button>
+          <button type="button" class="btn btn-secondary" id="downloadInvite">
+            ડાઉનલોડ
+          </button>
+        </div>
+
+        <p class="hint" id="statusHint">
+          નામ લખો, પછી WhatsApp પર સીધું શેર કરો.
+        </p>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

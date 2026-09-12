@@ -1,0 +1,229 @@
+:root {
+  --ink: #3a1512;
+  --maroon: #7a1c22;
+  --maroon-deep: #5a1218;
+  --gold: #c9a24a;
+  --gold-soft: #e8c97a;
+  --cream: #f7efe2;
+  --surface: rgba(255, 250, 242, 0.88);
+  --whatsapp: #128c7e;
+  --whatsapp-dark: #075e54;
+  --shadow: 0 18px 50px rgba(58, 21, 18, 0.28);
+  --radius: 18px;
+  --font-gu: "Noto Sans Gujarati", system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", "Noto Sans Gujarati", serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-gu);
+  color: var(--ink);
+  background: #2a0e0c;
+  min-height: 100dvh;
+}
+
+.atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(201, 162, 74, 0.35), transparent 55%),
+    radial-gradient(ellipse 70% 45% at 90% 80%, rgba(122, 28, 34, 0.55), transparent 50%),
+    linear-gradient(165deg, #4a1814 0%, #2a0e0c 45%, #1a0806 100%);
+}
+
+.atmosphere::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.12;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M30 2 L32 28 L58 30 L32 32 L30 58 L28 32 L2 30 L28 28 Z' fill='%23e8c97a'/%3E%3C/svg%3E");
+  background-size: 48px 48px;
+  pointer-events: none;
+}
+
+.app {
+  width: min(440px, 100%);
+  margin: 0 auto;
+  padding: 1.25rem 1rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.brand {
+  text-align: center;
+  animation: rise 0.7s ease-out both;
+}
+
+.brand-mark {
+  margin: 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: var(--gold-soft);
+}
+
+.brand h1 {
+  margin: 0.15rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 12vw, 3.4rem);
+  font-weight: 700;
+  line-height: 1;
+  color: #fff8ee;
+  text-shadow: 0 2px 24px rgba(201, 162, 74, 0.35);
+}
+
+.brand-sub {
+  margin: 0.35rem 0 0;
+  font-size: 0.92rem;
+  color: rgba(247, 239, 226, 0.78);
+}
+
+.preview-wrap {
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  background: #111;
+  animation: rise 0.85s ease-out 0.08s both;
+  border: 1px solid rgba(232, 201, 122, 0.35);
+}
+
+#inviteCanvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  vertical-align: middle;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1rem 1.05rem 1.15rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(201, 162, 74, 0.35);
+  box-shadow: var(--shadow);
+  animation: rise 0.9s ease-out 0.16s both;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field span {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--maroon);
+}
+
+.field input {
+  width: 100%;
+  border: 1.5px solid rgba(122, 28, 34, 0.22);
+  border-radius: 12px;
+  padding: 0.85rem 0.95rem;
+  font-family: var(--font-gu);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: #fffdf8;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field input::placeholder {
+  color: rgba(58, 21, 18, 0.4);
+  font-weight: 500;
+}
+
+.field input:focus {
+  border-color: var(--maroon);
+  box-shadow: 0 0 0 3px rgba(122, 28, 34, 0.12);
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 0.65rem;
+}
+
+.btn {
+  appearance: none;
+  border: none;
+  border-radius: 12px;
+  padding: 0.9rem 0.75rem;
+  font-family: var(--font-gu);
+  font-size: 0.98rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease, background 0.15s ease;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-whatsapp {
+  background: linear-gradient(180deg, #1aaa7a, var(--whatsapp));
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(18, 140, 126, 0.35);
+}
+
+.btn-whatsapp:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.btn-secondary {
+  background: #fff;
+  color: var(--maroon-deep);
+  border: 1.5px solid rgba(122, 28, 34, 0.28);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #fff8f0;
+}
+
+.hint {
+  margin: 0;
+  text-align: center;
+  font-size: 0.82rem;
+  color: rgba(58, 21, 18, 0.65);
+  min-height: 1.2em;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 380px) {
+  .actions {
+    grid-template-columns: 1fr;
+  }
+}
