@@ -1,22 +1,21 @@
 (() => {
   const INVITE_SRC = "public/invite.jpg";
-  const GREETING = "સ્નેહી શ્રી, ";
   const SHARE_TEXT =
     "🙏 વિઘ્નહર્તા યુવક મંડળ આયોજિત ભવ્ય આગમનનું આમંત્રણ\nગણપતિ બાપ્પા મોર્યા!";
 
-  // Render & export at 3× the template for sharp text / WhatsApp quality
+  // 3× export → ~2169×3072 (sharp name text for WhatsApp)
   const EXPORT_SCALE = 3;
 
-  // Ratios on original 723×1024 — cover fully erases original greeting + dots
+  // Only cover the dotted blank AFTER original "સ્નેહી શ્રી,"
+  // (keeps original greeting — avoids leftover marks on the left)
   const LAYOUT = {
-    coverX0: 275 / 723,
-    coverY0: 498 / 1024,
-    coverX1: 645 / 723,
-    coverY1: 536 / 1024,
-    textX: 290 / 723,
-    textColor: "#5c1418",
-    bgColor: "#fcf4e8",
-    maxFont: 20,
+    coverX0: 365 / 723,
+    coverY0: 502 / 1024,
+    coverX1: 638 / 723,
+    coverY1: 534 / 1024,
+    textColor: "#5a1216",
+    bgColor: "#fdf6eb",
+    maxFont: 19,
     minFont: 12,
     fontFamily: '"Noto Serif Gujarati", "Noto Sans Gujarati", serif',
   };
@@ -67,20 +66,18 @@
     const y0 = LAYOUT.coverY0 * h;
     const x1 = LAYOUT.coverX1 * w;
     const y1 = LAYOUT.coverY1 * h;
-    const textX = LAYOUT.textX * w;
 
-    // Slightly larger cover so no original glyph edges remain
     ctx.fillStyle = LAYOUT.bgColor;
     ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
 
-    const line = GREETING + trimmed;
-    const maxTextWidth = x1 - textX - 10 * scale;
-    const fontSize = fitFontSize(line, maxTextWidth, scale);
+    const pad = 6 * scale;
+    const maxTextWidth = x1 - x0 - pad * 2;
+    const fontSize = fitFontSize(trimmed, maxTextWidth, scale);
     ctx.font = `700 ${fontSize}px ${LAYOUT.fontFamily}`;
     ctx.fillStyle = LAYOUT.textColor;
     ctx.textBaseline = "middle";
     ctx.textAlign = "left";
-    ctx.fillText(line, textX, (y0 + y1) / 2 + fontSize * 0.04, maxTextWidth);
+    ctx.fillText(trimmed, x0 + pad, (y0 + y1) / 2 + fontSize * 0.03, maxTextWidth);
   }
 
   async function waitForFonts() {
@@ -92,7 +89,7 @@
     ]);
   }
 
-  function canvasBlob(type = "image/jpeg", quality = 0.97) {
+  function canvasBlob(type = "image/jpeg", quality = 0.98) {
     return new Promise((resolve, reject) => {
       canvas.toBlob(
         (blob) => (blob ? resolve(blob) : reject(new Error("Could not create image"))),
@@ -126,7 +123,7 @@
 
     try {
       renderInvite(name);
-      const blob = await canvasBlob("image/jpeg", 0.97);
+      const blob = await canvasBlob("image/jpeg", 0.98);
       const file = new File([blob], `vighnaharta-${Date.now()}.jpg`, {
         type: "image/jpeg",
       });
@@ -170,7 +167,7 @@
 
     try {
       renderInvite(name);
-      const blob = await canvasBlob("image/jpeg", 0.97);
+      const blob = await canvasBlob("image/jpeg", 0.98);
       downloadBlob(blob, "vighnaharta-invite.jpg");
       setStatus("હાઈ રિઝોલ્યુશન આમંત્રણ ડાઉનલોડ થયું.");
     } catch (err) {
