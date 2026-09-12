@@ -3,11 +3,11 @@
   const SHARE_TEXT =
     "🙏 વિઘ્નહર્તા યુવક મંડળ આયોજિત ભવ્ય આગમનનું આમંત્રણ\nગણપતિ બાપ્પા મોર્યા!";
 
-  // 3× export → ~2169×3072 (sharp name text for WhatsApp)
-  const EXPORT_SCALE = 3;
+  // Preview stays lighter; export uses maximum resolution + lossless PNG
+  const PREVIEW_SCALE = 2;
+  const EXPORT_SCALE = 4; // 723×1024 → 2892×4096
 
   // Only cover the dotted blank AFTER original "સ્નેહી શ્રી,"
-  // (keeps original greeting — avoids leftover marks on the left)
   const LAYOUT = {
     coverX0: 365 / 723,
     coverY0: 502 / 1024,
@@ -16,7 +16,7 @@
     textColor: "#5a1216",
     bgColor: "#fdf6eb",
     maxFont: 19,
-    minFont: 12,
+    minFont: 11,
     fontFamily: '"Noto Serif Gujarati", "Noto Sans Gujarati", serif',
   };
 
@@ -36,67 +36,87 @@
     statusHint.textContent = message;
   }
 
-  function fitFontSize(text, maxWidth, scale) {
+  function fitFontSize(measureCtx, text, maxWidth, scale) {
     let size = LAYOUT.maxFont * scale;
     const min = LAYOUT.minFont * scale;
     while (size > min) {
-      ctx.font = `700 ${size}px ${LAYOUT.fontFamily}`;
-      if (ctx.measureText(text).width <= maxWidth) break;
-      size -= 1;
+      measureCtx.font = `700 ${size}px ${LAYOUT.fontFamily}`;
+      if (measureCtx.measureText(text).width <= maxWidth) break;
+      size -= 0.5;
     }
     return size;
   }
 
-  function renderInvite(name) {
-    if (!inviteImage) return;
+  function paintInvite(targetCtx, width, height, name) {
+    const scale = width / baseW;
 
-    const w = canvas.width;
-    const h = canvas.height;
-    const scale = w / baseW;
-
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-    ctx.clearRect(0, 0, w, h);
-    ctx.drawImage(inviteImage, 0, 0, w, h);
+    targetCtx.imageSmoothingEnabled = true;
+    targetCtx.imageSmoothingQuality = "high";
+    targetCtx.fillStyle = "#000";
+    targetCtx.fillRect(0, 0, width, height);
+    targetCtx.drawImage(inviteImage, 0, 0, width, height);
 
     const trimmed = (name || "").trim();
     if (!trimmed) return;
 
-    const x0 = LAYOUT.coverX0 * w;
-    const y0 = LAYOUT.coverY0 * h;
-    const x1 = LAYOUT.coverX1 * w;
-    const y1 = LAYOUT.coverY1 * h;
+    const x0 = LAYOUT.coverX0 * width;
+    const y0 = LAYOUT.coverY0 * height;
+    const x1 = LAYOUT.coverX1 * width;
+    const y1 = LAYOUT.coverY1 * height;
 
-    ctx.fillStyle = LAYOUT.bgColor;
-    ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+    targetCtx.fillStyle = LAYOUT.bgColor;
+    targetCtx.fillRect(x0, y0, x1 - x0, y1 - y0);
 
     const pad = 6 * scale;
     const maxTextWidth = x1 - x0 - pad * 2;
-    const fontSize = fitFontSize(trimmed, maxTextWidth, scale);
-    ctx.font = `700 ${fontSize}px ${LAYOUT.fontFamily}`;
-    ctx.fillStyle = LAYOUT.textColor;
-    ctx.textBaseline = "middle";
-    ctx.textAlign = "left";
-    ctx.fillText(trimmed, x0 + pad, (y0 + y1) / 2 + fontSize * 0.03, maxTextWidth);
+    const fontSize = fitFontSize(targetCtx, trimmed, maxTextWidth, scale);
+
+    targetCtx.font = `700 ${fontSize}px ${LAYOUT.fontFamily}`;
+    targetCtx.fillStyle = LAYOUT.textColor;
+    targetCtx.textBaseline = "middle";
+    targetCtx.textAlign = "left";
+    // Do NOT pass maxWidth to fillText — that horizontally squashes glyphs and blurs them
+    targetCtx.fillText(trimmed, x0 + pad, (y0 + y1) / 2 + fontSize * 0.03);
+  }
+
+  function renderPreview(name) {
+    if (!inviteImage) return;
+    paintInvite(ctx, canvas.width, canvas.height, name);
+  }
+
+  function createExportCanvas(name) {
+    const exportCanvas = document.createElement("canvas");
+    exportCanvas.width = Math.round(baseW * EXPORT_SCALE);
+    exportCanvas.height = Math.round(baseH * EXPORT_SCALE);
+    const exportCtx = exportCanvas.getContext("2d", { alpha: false });
+    paintInvite(exportCtx, exportCanvas.width, exportCanvas.height, name);
+    return exportCanvas;
   }
 
   async function waitForFonts() {
     if (!document.fonts?.load) return;
     await Promise.all([
-      document.fonts.load('700 60px "Noto Serif Gujarati"'),
-      document.fonts.load('600 60px "Noto Sans Gujarati"'),
+      document.fonts.load('700 80px "Noto Serif Gujarati"'),
+      document.fonts.load('600 80px "Noto Sans Gujarati"'),
       document.fonts.load('700 48px "Cormorant Garamond"'),
     ]);
+    await document.fonts.ready;
   }
 
-  function canvasBlob(type = "image/jpeg", quality = 0.98) {
+  function canvasToBlob(sourceCanvas, type, quality) {
     return new Promise((resolve, reject) => {
-      canvas.toBlob(
+      sourceCanvas.toBlob(
         (blob) => (blob ? resolve(blob) : reject(new Error("Could not create image"))),
         type,
         quality
       );
     });
+  }
+
+  /** Lossless PNG at max resolution — highest quality the browser can produce */
+  async function buildMaxQualityBlob(name) {
+    const exportCanvas = createExportCanvas(name);
+    return canvasToBlob(exportCanvas, "image/png");
   }
 
   function downloadBlob(blob, filename) {
@@ -119,13 +139,12 @@
     }
 
     shareBtn.disabled = true;
-    setStatus("ઉચ્ચ રિઝોલ્યુશન આમંત્રણ તૈયાર થઈ રહ્યું છે…");
+    setStatus("મહત્તમ ક્વોલિટી PNG તૈયાર થઈ રહ્યું છે…");
 
     try {
-      renderInvite(name);
-      const blob = await canvasBlob("image/jpeg", 0.98);
-      const file = new File([blob], `vighnaharta-${Date.now()}.jpg`, {
-        type: "image/jpeg",
+      const blob = await buildMaxQualityBlob(name);
+      const file = new File([blob], `vighnaharta-${Date.now()}.png`, {
+        type: "image/png",
       });
 
       if (navigator.canShare?.({ files: [file] })) {
@@ -134,7 +153,9 @@
           title: "વિઘ્નહર્તા આમંત્રણ",
           text: SHARE_TEXT,
         });
-        setStatus("શેર મેનૂમાંથી WhatsApp પસંદ કરો.");
+        setStatus(
+          "WhatsAppમાં Document/ફાઇલ તરીકે મોકલો — Photo તરીકે મોકલતા ક્વોલિટી ઘટે છે."
+        );
         return;
       }
 
@@ -144,7 +165,9 @@
         "_blank",
         "noopener,noreferrer"
       );
-      setStatus("ફોટો ડાઉનલોડ થયો — WhatsAppમાં અટેચ કરો.");
+      setStatus(
+        "PNG ડાઉનલોડ થયું. WhatsApp → Document/File તરીકે અટેચ કરો (સૌથી ઊંચી ક્વોલિટી)."
+      );
     } catch (err) {
       if (err?.name === "AbortError") {
         setStatus("શેર રદ થયું.");
@@ -165,14 +188,19 @@
       return;
     }
 
+    downloadBtn.disabled = true;
+    setStatus("મહત્તમ ક્વોલિટી PNG તૈયાર થઈ રહ્યું છે…");
+
     try {
-      renderInvite(name);
-      const blob = await canvasBlob("image/jpeg", 0.98);
-      downloadBlob(blob, "vighnaharta-invite.jpg");
-      setStatus("હાઈ રિઝોલ્યુશન આમંત્રણ ડાઉનલોડ થયું.");
+      const blob = await buildMaxQualityBlob(name);
+      downloadBlob(blob, "vighnaharta-invite.png");
+      const mb = (blob.size / (1024 * 1024)).toFixed(1);
+      setStatus(`મહત્તમ ક્વોલિટી PNG ડાઉનલોડ થયું (${mb} MB · 2892×4096).`);
     } catch (err) {
       console.error(err);
       setStatus("ડાઉનલોડ ન થઈ શક્યું.");
+    } finally {
+      downloadBtn.disabled = false;
     }
   }
 
@@ -180,7 +208,7 @@
     const token = ++drawToken;
     requestAnimationFrame(() => {
       if (token !== drawToken) return;
-      renderInvite(nameInput.value);
+      renderPreview(nameInput.value);
     });
   }
 
@@ -193,6 +221,7 @@
       await waitForFonts();
       inviteImage = await new Promise((resolve, reject) => {
         const img = new Image();
+        img.decoding = "high";
         img.onload = () => resolve(img);
         img.onerror = () => reject(new Error("Invite image failed to load"));
         img.src = INVITE_SRC;
@@ -200,10 +229,12 @@
 
       baseW = inviteImage.naturalWidth;
       baseH = inviteImage.naturalHeight;
-      canvas.width = Math.round(baseW * EXPORT_SCALE);
-      canvas.height = Math.round(baseH * EXPORT_SCALE);
-      renderInvite("");
-      setStatus("નામ લખો, પછી WhatsApp પર સીધું શેર કરો.");
+      canvas.width = Math.round(baseW * PREVIEW_SCALE);
+      canvas.height = Math.round(baseH * PREVIEW_SCALE);
+      renderPreview("");
+      setStatus(
+        "નામ લખો. શેર/ડાઉનલોડ = મહત્તમ PNG. WhatsAppમાં Document તરીકે મોકલો."
+      );
       shareBtn.disabled = false;
       downloadBtn.disabled = false;
     } catch (err) {
