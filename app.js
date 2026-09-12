@@ -4,14 +4,17 @@
   const SHARE_TEXT =
     "🙏 વિઘ્નહર્તા યુવક મંડળ આયોજિત ભવ્ય આગમનનું આમંત્રણ\nગણપતિ બાપ્પા મોર્યા!";
 
-  // Full name-line rewrite on 723×1024 invite (covers dotted blank)
+  // Render & export at 3× the template for sharp text / WhatsApp quality
+  const EXPORT_SCALE = 3;
+
+  // Ratios on original 723×1024 — cover fully erases original greeting + dots
   const LAYOUT = {
-    coverX0: 285 / 723,
-    coverY0: 501 / 1024,
-    coverX1: 638 / 723,
-    coverY1: 534 / 1024,
-    textX: 288 / 723,
-    textColor: "#66161c",
+    coverX0: 275 / 723,
+    coverY0: 498 / 1024,
+    coverX1: 645 / 723,
+    coverY1: 536 / 1024,
+    textX: 290 / 723,
+    textColor: "#5c1418",
     bgColor: "#fcf4e8",
     maxFont: 20,
     minFont: 12,
@@ -19,22 +22,25 @@
   };
 
   const canvas = document.getElementById("inviteCanvas");
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { alpha: false });
   const nameInput = document.getElementById("guestName");
   const shareBtn = document.getElementById("shareWhatsApp");
   const downloadBtn = document.getElementById("downloadInvite");
   const statusHint = document.getElementById("statusHint");
 
   let inviteImage = null;
+  let baseW = 723;
+  let baseH = 1024;
   let drawToken = 0;
 
   function setStatus(message) {
     statusHint.textContent = message;
   }
 
-  function fitFontSize(text, maxWidth) {
-    let size = LAYOUT.maxFont;
-    while (size > LAYOUT.minFont) {
+  function fitFontSize(text, maxWidth, scale) {
+    let size = LAYOUT.maxFont * scale;
+    const min = LAYOUT.minFont * scale;
+    while (size > min) {
       ctx.font = `700 ${size}px ${LAYOUT.fontFamily}`;
       if (ctx.measureText(text).width <= maxWidth) break;
       size -= 1;
@@ -47,6 +53,10 @@
 
     const w = canvas.width;
     const h = canvas.height;
+    const scale = w / baseW;
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
     ctx.clearRect(0, 0, w, h);
     ctx.drawImage(inviteImage, 0, 0, w, h);
 
@@ -59,29 +69,30 @@
     const y1 = LAYOUT.coverY1 * h;
     const textX = LAYOUT.textX * w;
 
+    // Slightly larger cover so no original glyph edges remain
     ctx.fillStyle = LAYOUT.bgColor;
     ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
 
     const line = GREETING + trimmed;
-    const maxTextWidth = x1 - textX - 8;
-    const fontSize = fitFontSize(line, maxTextWidth);
+    const maxTextWidth = x1 - textX - 10 * scale;
+    const fontSize = fitFontSize(line, maxTextWidth, scale);
     ctx.font = `700 ${fontSize}px ${LAYOUT.fontFamily}`;
     ctx.fillStyle = LAYOUT.textColor;
     ctx.textBaseline = "middle";
     ctx.textAlign = "left";
-    ctx.fillText(line, textX, (y0 + y1) / 2 + fontSize * 0.05, maxTextWidth);
+    ctx.fillText(line, textX, (y0 + y1) / 2 + fontSize * 0.04, maxTextWidth);
   }
 
   async function waitForFonts() {
     if (!document.fonts?.load) return;
     await Promise.all([
-      document.fonts.load('700 20px "Noto Serif Gujarati"'),
-      document.fonts.load('600 20px "Noto Sans Gujarati"'),
+      document.fonts.load('700 60px "Noto Serif Gujarati"'),
+      document.fonts.load('600 60px "Noto Sans Gujarati"'),
       document.fonts.load('700 48px "Cormorant Garamond"'),
     ]);
   }
 
-  function canvasBlob(type = "image/jpeg", quality = 0.92) {
+  function canvasBlob(type = "image/jpeg", quality = 0.97) {
     return new Promise((resolve, reject) => {
       canvas.toBlob(
         (blob) => (blob ? resolve(blob) : reject(new Error("Could not create image"))),
@@ -111,11 +122,11 @@
     }
 
     shareBtn.disabled = true;
-    setStatus("આમંત્રણ તૈયાર થઈ રહ્યું છે…");
+    setStatus("ઉચ્ચ રિઝોલ્યુશન આમંત્રણ તૈયાર થઈ રહ્યું છે…");
 
     try {
       renderInvite(name);
-      const blob = await canvasBlob();
+      const blob = await canvasBlob("image/jpeg", 0.97);
       const file = new File([blob], `vighnaharta-${Date.now()}.jpg`, {
         type: "image/jpeg",
       });
@@ -159,9 +170,9 @@
 
     try {
       renderInvite(name);
-      const blob = await canvasBlob();
+      const blob = await canvasBlob("image/jpeg", 0.97);
       downloadBlob(blob, "vighnaharta-invite.jpg");
-      setStatus("આમંત્રણ ડાઉનલોડ થયું.");
+      setStatus("હાઈ રિઝોલ્યુશન આમંત્રણ ડાઉનલોડ થયું.");
     } catch (err) {
       console.error(err);
       setStatus("ડાઉનલોડ ન થઈ શક્યું.");
@@ -190,8 +201,10 @@
         img.src = INVITE_SRC;
       });
 
-      canvas.width = inviteImage.naturalWidth;
-      canvas.height = inviteImage.naturalHeight;
+      baseW = inviteImage.naturalWidth;
+      baseH = inviteImage.naturalHeight;
+      canvas.width = Math.round(baseW * EXPORT_SCALE);
+      canvas.height = Math.round(baseH * EXPORT_SCALE);
       renderInvite("");
       setStatus("નામ લખો, પછી WhatsApp પર સીધું શેર કરો.");
       shareBtn.disabled = false;

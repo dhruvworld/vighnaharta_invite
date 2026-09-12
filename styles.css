@@ -104,6 +104,7 @@ body {
   width: 100%;
   height: auto;
   vertical-align: middle;
+  image-rendering: auto;
 }
 
 .controls {
